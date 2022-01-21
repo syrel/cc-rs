@@ -942,16 +942,7 @@ impl Build {
     /// Run the compiler, generating the file `output`
     ///
     /// This will return a result instead of panicing; see compile() for the complete description.
-    pub fn try_compile(&self, output: &str) -> Result<(), Error> {
-        let (lib_name, gnu_lib_name) = if output.starts_with("lib") && output.ends_with(".a") {
-            (&output[3..output.len() - 2], output.to_owned())
-        } else {
-            let mut gnu = String::with_capacity(5 + output.len());
-            gnu.push_str("lib");
-            gnu.push_str(&output);
-            gnu.push_str(".a");
-            (output, gnu)
-        };
+    pub fn try_compile_binary(&self, lib_name: &str, binary_name: &str) -> Result<(), Error> {
         let dst = self.get_out_dir()?;
 
         let mut objects = Vec::new();
@@ -978,7 +969,7 @@ impl Build {
             objects.push(Object::new(file.to_path_buf(), obj));
         }
         self.compile_objects(&objects)?;
-        self.assemble(lib_name, &dst.join(gnu_lib_name), &objects)?;
+        self.assemble(lib_name, &dst.join(binary_name), &objects)?;
 
         if self.get_target()?.contains("msvc") {
             let compiler = self.get_base_compiler()?;
@@ -1062,6 +1053,23 @@ impl Build {
         }
 
         Ok(())
+    }
+
+    /// Run the compiler, generating the file `output`
+    ///
+    /// This will return a result instead of panicing; see compile() for the complete description.
+    pub fn try_compile(&self, output: &str) -> Result<(), Error> {
+        let (lib_name, gnu_lib_name) = if output.starts_with("lib") && output.ends_with(".a") {
+            (&output[3..output.len() - 2], output.to_owned())
+        } else {
+            let mut gnu = String::with_capacity(5 + output.len());
+            gnu.push_str("lib");
+            gnu.push_str(&output);
+            gnu.push_str(".a");
+            (output, gnu)
+        };
+
+        self.try_compile_binary(lib_name, &gnu_lib_name)
     }
 
     /// Run the compiler, generating the file `output`
