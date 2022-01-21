@@ -1931,24 +1931,7 @@ impl Build {
 
         let target = self.get_target()?;
         if target.contains("msvc") {
-            // The Rust compiler will look for libfoo.a and foo.lib, but the
-            // MSVC linker will also be passed foo.lib, so be sure that both
-            // exist for now.
-
-            let lib_dst = dst.with_file_name(format!("{}.lib", lib_name));
-            let _ = fs::remove_file(&lib_dst);
-            match fs::hard_link(&dst, &lib_dst).or_else(|_| {
-                // if hard-link fails, just copy (ignoring the number of bytes written)
-                fs::copy(&dst, &lib_dst).map(|_| ())
-            }) {
-                Ok(_) => (),
-                Err(_) => {
-                    return Err(Error::new(
-                        ErrorKind::IOError,
-                        "Could not copy or create a hard-link to the generated lib file.",
-                    ));
-                }
-            };
+            // do not overwrite the .lib file
         } else {
             // Non-msvc targets (those using `ar`) need a separate step to add
             // the symbol table to archives since our construction command of
